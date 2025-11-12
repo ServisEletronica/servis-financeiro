@@ -1,0 +1,266 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Lora:wght@400;600;700&family=Fira+Code:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 244 23% 97%;
+    --foreground: 244 14% 27%;
+    --card: 0 0% 100%;
+    --card-foreground: 244 14% 27%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 244 14% 27%;
+    --primary: 244 47% 37%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 244 35% 87%;
+    --secondary-foreground: 244 47% 22%;
+    --muted: 244 3% 96%;
+    --muted-foreground: 244 3% 45%;
+    --accent: 244 35% 90%;
+    --accent-foreground: 244 47% 20%;
+    --destructive: 0 62.1891% 60.5882%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 244 18% 82%;
+    --input: 244 23% 92%;
+    --ring: 244 47% 37%;
+    --chart-1: 244 47% 37%;
+    --chart-2: 342.4615 56.5217% 77.4510%;
+    --chart-3: 158.7692 31.4010% 59.4118%;
+    --chart-4: 35.7576 76.7442% 74.7059%;
+    --chart-5: 215.8209 54.4715% 75.8824%;
+    --sidebar: 244 23% 95%;
+    --sidebar-foreground: 244 14% 27%;
+    --sidebar-primary: 244 47% 37%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 244 35% 90%;
+    --sidebar-accent-foreground: 244 47% 20%;
+    --sidebar-border: 244 18% 85%;
+    --sidebar-ring: 244 47% 37%;
+    --font-sans: Geist, sans-serif;
+    --font-serif: 'Lora', Georgia, serif;
+    --font-mono: 'Fira Code', 'Courier New', monospace;
+    --radius: 0.5rem;
+    --shadow-2xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
+    --shadow-xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
+    --shadow-sm: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
+    --shadow: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
+    --shadow-md: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 2px 4px 0px hsl(0 0% 0% / 0.06);
+    --shadow-lg: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 4px 6px 0px hsl(0 0% 0% / 0.06);
+    --shadow-xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 8px 10px 0px hsl(0 0% 0% / 0.06);
+    --shadow-2xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.15);
+    --tracking-normal: 0em;
+    --spacing: 0.25rem;
+  }
+
+  .dark {
+    --background: 244 18% 12%;
+    --foreground: 244 36% 90%;
+    --card: 244 20% 16%;
+    --card-foreground: 244 36% 90%;
+    --popover: 244 20% 16%;
+    --popover-foreground: 244 36% 90%;
+    --primary: 244 47% 52%;
+    --primary-foreground: 0 0% 10%;
+    --secondary: 244 35% 25%;
+    --secondary-foreground: 244 47% 90%;
+    --muted: 244 3% 15%;
+    --muted-foreground: 244 3% 64%;
+    --accent: 244 35% 22%;
+    --accent-foreground: 244 47% 88%;
+    --destructive: 0 68.6747% 67.4510%;
+    --destructive-foreground: 0 0% 10%;
+    --border: 244 18% 21%;
+    --input: 244 20% 19%;
+    --ring: 244 47% 52%;
+    --chart-1: 244 47% 52%;
+    --chart-2: 345.5172 69.0476% 83.5294%;
+    --chart-3: 158.7692 31.4010% 59.4118%;
+    --chart-4: 35.7576 76.7442% 74.7059%;
+    --chart-5: 215.8209 54.4715% 75.8824%;
+    --sidebar: 244 20% 10%;
+    --sidebar-foreground: 244 36% 90%;
+    --sidebar-primary: 244 47% 52%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 244 35% 22%;
+    --sidebar-accent-foreground: 244 47% 88%;
+    --sidebar-border: 244 20% 19%;
+    --sidebar-ring: 244 47% 52%;
+    --font-sans: Geist, sans-serif;
+    --font-serif: 'Lora', Georgia, serif;
+    --font-mono: 'Fira Code', 'Courier New', monospace;
+    --radius: 0.5rem;
+    --shadow-2xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
+    --shadow-xs: 1px 2px 5px 1px hsl(0 0% 0% / 0.03);
+    --shadow-sm: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
+    --shadow: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 1px 2px 0px hsl(0 0% 0% / 0.06);
+    --shadow-md: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 2px 4px 0px hsl(0 0% 0% / 0.06);
+    --shadow-lg: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 4px 6px 0px hsl(0 0% 0% / 0.06);
+    --shadow-xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.06), 1px 8px 10px 0px hsl(0 0% 0% / 0.06);
+    --shadow-2xl: 1px 2px 5px 1px hsl(0 0% 0% / 0.15);
+  }
+}
+
+@layer base {
+  @theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --font-sans: var(--font-sans);
+    --font-mono: var(--font-mono);
+    --font-serif: var(--font-serif);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --shadow-2xs: var(--shadow-2xs);
+    --shadow-xs: var(--shadow-xs);
+    --shadow-sm: var(--shadow-sm);
+    --shadow: var(--shadow);
+    --shadow-md: var(--shadow-md);
+    --shadow-lg: var(--shadow-lg);
+    --shadow-xl: var(--shadow-xl);
+    --shadow-2xl: var(--shadow-2xl);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+}
+
+@layer base {
+  h1 {
+    @apply text-3xl font-bold lg:text-4xl;
+  }
+  h2 {
+    @apply text-2xl font-semibold lg:text-3xl;
+  }
+  h3 {
+    @apply text-xl font-semibold lg:text-2xl;
+  }
+  p {
+    @apply text-base;
+  }
+}
+
+@layer utilities {
+  .text-h1 {
+    @apply text-[32px] font-bold md:text-[24px];
+  }
+  .text-h2 {
+    @apply text-[24px] font-semibold md:text-[20px];
+  }
+  .text-h3 {
+    @apply text-[18px] font-semibold md:text-[16px];
+  }
+  .text-body {
+    @apply text-[16px] md:text-[14px];
+  }
+  .text-small {
+    @apply text-[12px] font-medium md:text-[11px];
+  }
+  .sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--sidebar-border)) transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--sidebar-border));
+    border-radius: 9999px;
+  }
+  .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--sidebar-primary));
+  }
+  .modal-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .modal-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  .modal-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .modal-scroll::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  .modal-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--primary));
+  }
+
+  /* Kanban scrollbar customizado */
+  .kanban-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .kanban-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .kanban-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .kanban-scroll::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  .kanban-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--primary) / 0.6);
+  }
+  .kanban-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  
+  /* Fix for hidden tabs consuming flex space */
+  [role="tabpanel"][hidden] {
+    display: none !important;
+  }
+  
+  /* Custom tab trigger styling */
+  [data-state="active"][role="tab"] {
+    margin: 2px 4px;
+    border-radius: 6px;
+  }
+}
