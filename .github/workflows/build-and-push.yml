@@ -19,10 +19,11 @@ jobs:
           - name: servis-financeiro-api
             context: ./api
             dockerfile: ./api/Dockerfile
+            is_frontend: false
           - name: servis-financeiro-frontend
             context: .
             dockerfile: ./Dockerfile
-            build_args: VITE_API_URL=${{ secrets.VITE_API_URL || 'http://localhost:3006' }}
+            is_frontend: true
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -42,7 +43,7 @@ jobs:
           push: true
           no-cache: true
           build-args: |
-            ${{ matrix.build_args || '' }}
+            ${{ matrix.is_frontend && format('VITE_API_URL={0}', secrets.VITE_API_URL || 'http://localhost:3006') || '' }}
           tags: |
             ghcr.io/${{ steps.prep.outputs.owner }}/${{ matrix.name }}:latest
             ghcr.io/${{ steps.prep.outputs.owner }}/${{ matrix.name }}:${{ github.sha }}
