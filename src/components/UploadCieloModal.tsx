@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { useToast } from '@/hooks/use-toast'
+import { showCustomToastSuccess, showCustomToastError } from '@/lib/toast'
 import { RecebiveisCartaoService } from '@/services/recebiveis-cartao.service'
 
 interface UploadCieloModalProps {
@@ -21,7 +21,6 @@ export function UploadCieloModal({ open, onOpenChange, onUploadSuccess }: Upload
   const [files, setFiles] = useState<File[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const { toast } = useToast()
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -53,11 +52,10 @@ export function UploadCieloModal({ open, onOpenChange, onUploadSuccess }: Upload
     const validFiles = newFiles.filter(file => {
       const isImage = file.type.startsWith('image/')
       if (!isImage) {
-        toast({
-          title: 'Arquivo inválido',
-          description: `${file.name} não é uma imagem`,
-          variant: 'destructive',
-        })
+        showCustomToastError(
+          'Arquivo inválido',
+          `${file.name} não é uma imagem`
+        )
       }
       return isImage
     })
@@ -66,11 +64,10 @@ export function UploadCieloModal({ open, onOpenChange, onUploadSuccess }: Upload
     const validSizeFiles = validFiles.filter(file => {
       const isValidSize = file.size <= 10 * 1024 * 1024
       if (!isValidSize) {
-        toast({
-          title: 'Arquivo muito grande',
-          description: `${file.name} excede 10MB`,
-          variant: 'destructive',
-        })
+        showCustomToastError(
+          'Arquivo muito grande',
+          `${file.name} excede 10MB`
+        )
       }
       return isValidSize
     })
@@ -78,11 +75,10 @@ export function UploadCieloModal({ open, onOpenChange, onUploadSuccess }: Upload
     // Máximo 10 arquivos
     const totalFiles = files.length + validSizeFiles.length
     if (totalFiles > 10) {
-      toast({
-        title: 'Limite excedido',
-        description: 'Máximo de 10 arquivos por vez',
-        variant: 'destructive',
-      })
+      showCustomToastError(
+        'Limite excedido',
+        'Máximo de 10 arquivos por vez'
+      )
       return
     }
 
@@ -95,18 +91,17 @@ export function UploadCieloModal({ open, onOpenChange, onUploadSuccess }: Upload
 
   const handleUpload = async () => {
     if (files.length === 0) {
-      toast({
-        title: 'Nenhum arquivo selecionado',
-        description: 'Selecione pelo menos uma imagem',
-        variant: 'destructive',
-      })
+      showCustomToastError(
+        'Nenhum arquivo selecionado',
+        'Selecione pelo menos uma imagem'
+      )
       return
     }
 
     setIsUploading(true)
 
     try {
-      const result = await RecebiveisCartaoService.uploadCalendarios(files)
+      const result = await RecebiveisCartaoService.uploadCalendarios(files, 'projetado')
 
       // Se houver registros inseridos, consideramos sucesso (mesmo com erros parciais)
       const totalInseridos = result.data.total_registros_inseridos || 0
@@ -114,10 +109,10 @@ export function UploadCieloModal({ open, onOpenChange, onUploadSuccess }: Upload
 
       if (totalInseridos > 0) {
         // Sucesso - fechar modal e limpar
-        toast({
-          title: 'Upload concluído!',
-          description: `${totalInseridos} recebíveis processados com sucesso${totalErros > 0 ? ` (${totalErros} erros)` : ''}`,
-        })
+        showCustomToastSuccess(
+          'Upload concluído!',
+          `${totalInseridos} recebíveis processados com sucesso${totalErros > 0 ? ` (${totalErros} erros)` : ''}`
+        )
 
         // Limpar arquivos e fechar modal
         setFiles([])
@@ -126,20 +121,18 @@ export function UploadCieloModal({ open, onOpenChange, onUploadSuccess }: Upload
         onUploadSuccess()
       } else {
         // Nenhum registro inserido - manter modal aberto
-        toast({
-          title: 'Erro no processamento',
-          description: 'Nenhum recebível pôde ser processado. Verifique as imagens.',
-          variant: 'destructive',
-        })
+        showCustomToastError(
+          'Erro no processamento',
+          'Nenhum recebível pôde ser processado. Verifique as imagens.'
+        )
         setIsUploading(false)
       }
     } catch (error: any) {
       console.error('Erro no upload:', error)
-      toast({
-        title: 'Erro ao fazer upload',
-        description: error.response?.data?.detail || error.message || 'Erro desconhecido',
-        variant: 'destructive',
-      })
+      showCustomToastError(
+        'Erro ao fazer upload',
+        error.response?.data?.detail || error.message || 'Erro desconhecido'
+      )
       setIsUploading(false)
     }
   }

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
-from routes import dashboard, contas, sincronizacao, projetado, recebiveis_cartao, contas_receber_senior, contas_pagar_senior
+from routes import dashboard, contas, sincronizacao, projetado, recebiveis_cartao, contas_receber_senior, contas_pagar_senior, auth
 
 # Inicializa FastAPI
 app = FastAPI(
@@ -22,6 +22,7 @@ app.add_middleware(
 )
 
 # Registra rotas
+app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(contas.router)
 app.include_router(sincronizacao.router)

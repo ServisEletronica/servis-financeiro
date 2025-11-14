@@ -111,3 +111,20 @@ class SeniorDatabaseConnection:
 # Instâncias globais
 db = DatabaseConnection()  # Banco local (Financeiro)
 senior_db = SeniorDatabaseConnection()  # Banco Senior (Sapiens - Leitura)
+
+
+def get_db_connection():
+    """
+    Retorna uma conexão direta com o banco de dados local
+    Use para operações que precisam de controle manual de conexão
+    """
+    return pymssql.connect(
+        server=settings.DB_SERVER,
+        port=settings.DB_PORT,
+        user=settings.DB_USER,
+        password=settings.DB_PASSWORD,
+        database=settings.DB_NAME,
+        as_dict=True,
+        timeout=60,
+        login_timeout=30
+    )

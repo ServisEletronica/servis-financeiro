@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     # OpenAI
     OPENAI_API_KEY: str
 
+    # Autenticação JWT
+    JWT_SECRET_KEY: str = "change-this-secret-key-in-production-use-a-strong-random-value"
+
     class Config:
         env_file = ".env"
         case_sensitive = True

@@ -29,18 +29,25 @@ export class RecebiveisCartaoService {
   /**
    * Faz upload de calendários Cielo
    */
-  static async uploadCalendarios(files: File[]): Promise<UploadResult> {
+  static async uploadCalendarios(
+    files: File[],
+    status: 'projetado' | 'recebido' = 'projetado'
+  ): Promise<UploadResult> {
     const formData = new FormData()
 
     files.forEach((file) => {
       formData.append('files', file)
     })
 
-    const response = await api.post<UploadResult>('/api/recebiveis-cartao/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
+    const response = await api.post<UploadResult>(
+      `/api/recebiveis-cartao/upload?status=${status}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
 
     return response.data
   }
@@ -48,10 +55,24 @@ export class RecebiveisCartaoService {
   /**
    * Obtém recebíveis de cartão por período
    */
-  static async obterRecebiveis(dataInicio: string, dataFim: string): Promise<RecebiveisCartaoData[]> {
-    const response = await api.get<RecebiveisCartaoData[]>('/api/recebiveis-cartao', {
-      params: { data_inicio: dataInicio, data_fim: dataFim }
-    })
+  static async obterRecebiveis(
+    dataInicio: string,
+    dataFim: string,
+    estabelecimentos?: string[],
+    status: 'projetado' | 'recebido' = 'projetado'
+  ): Promise<RecebiveisCartaoData[]> {
+    const params: any = {
+      data_inicio: dataInicio,
+      data_fim: dataFim,
+      status
+    }
+
+    // Adiciona filtro de estabelecimentos se fornecido
+    if (estabelecimentos && estabelecimentos.length > 0) {
+      params.estabelecimentos = estabelecimentos.join(',')
+    }
+
+    const response = await api.get<RecebiveisCartaoData[]>('/api/recebiveis-cartao', { params })
     return response.data
   }
 
@@ -70,5 +91,17 @@ export class RecebiveisCartaoService {
     await api.delete(`/api/recebiveis-cartao/${mesReferencia}`, {
       params: estabelecimento ? { estabelecimento } : {}
     })
+  }
+
+  /**
+   * Insere um recebível manualmente
+   */
+  static async inserirRecebidoManual(data: {
+    data_recebimento: string
+    valor: number
+    estabelecimento: string
+    mes_referencia: string
+  }): Promise<void> {
+    await api.post('/api/recebiveis-cartao/manual', data)
   }
 }

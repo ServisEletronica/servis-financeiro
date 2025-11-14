@@ -16,12 +16,13 @@ class RecebiveisCartaoService:
     """Serviço para operações com recebíveis de cartão"""
 
     @staticmethod
-    def processar_upload(images_bytes_list: List[bytes], usuario: str = "sistema") -> Dict:
+    def processar_upload(images_bytes_list: List[bytes], status: str = "projetado", usuario: str = "sistema") -> Dict:
         """
         Processa upload de imagens de calendários Cielo
 
         Args:
             images_bytes_list: Lista de bytes de imagens
+            status: Status dos recebíveis ('projetado' ou 'recebido')
             usuario: Usuário que está fazendo o upload
 
         Returns:
@@ -69,6 +70,7 @@ class RecebiveisCartaoService:
                             valor=recebivel["valor"],
                             estabelecimento=estabelecimento,
                             mes_referencia=mes_referencia,
+                            status=status,
                             usuario_upload=usuario
                         )
                         registros_inseridos += 1
@@ -111,6 +113,7 @@ class RecebiveisCartaoService:
         valor: float,
         estabelecimento: str,
         mes_referencia: str,
+        status: str = "projetado",
         usuario_upload: str = "sistema"
     ) -> bool:
         """
@@ -121,6 +124,7 @@ class RecebiveisCartaoService:
             valor: Valor do recebimento
             estabelecimento: Código do estabelecimento
             mes_referencia: Mês de referência (YYYY-MM)
+            status: Status do recebível ('projetado' ou 'recebido')
             usuario_upload: Usuário que fez o upload
 
         Returns:
@@ -128,42 +132,126 @@ class RecebiveisCartaoService:
         """
         query = """
         INSERT INTO recebiveis_cartao
-            (data_recebimento, valor, estabelecimento, mes_referencia, usuario_upload, data_upload)
-        VALUES (%s, %s, %s, %s, %s, GETDATE())
+            (data_recebimento, valor, estabelecimento, mes_referencia, status, usuario_upload, data_upload)
+        VALUES (%s, %s, %s, %s, %s, %s, GETDATE())
         """
 
         # Usa contexto de conexão diretamente para INSERT
         with db.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(query, (data_recebimento, valor, estabelecimento, mes_referencia, usuario_upload))
+            cursor.execute(query, (data_recebimento, valor, estabelecimento, mes_referencia, status, usuario_upload))
             conn.commit()
             cursor.close()
 
         return True
 
     @staticmethod
-    def obter_recebiveis_por_periodo(data_inicio: str, data_fim: str) -> List[Dict]:
+    def upsert_recebivel(
+        data_recebimento: str,
+        valor: float,
+        estabelecimento: str,
+        mes_referencia: str,
+        status: str = "recebido",
+        usuario_upload: str = "manual"
+    ) -> bool:
+        """
+        Insere ou atualiza um recebível no banco de dados (UPSERT)
+        Se já existir um registro com mesma data, estabelecimento e status, atualiza o valor
+        Senão, insere um novo registro
+
+        Args:
+            data_recebimento: Data do recebimento (YYYY-MM-DD)
+            valor: Valor do recebimento
+            estabelecimento: Código do estabelecimento
+            mes_referencia: Mês de referência (YYYY-MM)
+            status: Status do recebível ('projetado' ou 'recebido')
+            usuario_upload: Usuário que fez o upload
+
+        Returns:
+            True se inserido/atualizado com sucesso
+        """
+        # MERGE não existe em todas as versões do SQL Server acessíveis via pymssql
+        # Vamos usar a abordagem UPDATE + INSERT se não afetar linhas
+
+        with db.get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Primeiro tenta atualizar
+            update_query = """
+            UPDATE recebiveis_cartao
+            SET valor = %s,
+                usuario_upload = %s,
+                data_upload = GETDATE()
+            WHERE data_recebimento = %s
+              AND estabelecimento = %s
+              AND mes_referencia = %s
+              AND status = %s
+            """
+            cursor.execute(update_query, (valor, usuario_upload, data_recebimento, estabelecimento, mes_referencia, status))
+
+            # Se não atualizou nenhuma linha, insere
+            if cursor.rowcount == 0:
+                insert_query = """
+                INSERT INTO recebiveis_cartao
+                    (data_recebimento, valor, estabelecimento, mes_referencia, status, usuario_upload, data_upload)
+                VALUES (%s, %s, %s, %s, %s, %s, GETDATE())
+                """
+                cursor.execute(insert_query, (data_recebimento, valor, estabelecimento, mes_referencia, status, usuario_upload))
+
+            conn.commit()
+            cursor.close()
+
+        return True
+
+    @staticmethod
+    def obter_recebiveis_por_periodo(
+        data_inicio: str,
+        data_fim: str,
+        estabelecimentos: Optional[List[str]] = None,
+        status: str = 'projetado'
+    ) -> List[Dict]:
         """
         Obtém recebíveis agrupados por data em um período
 
         Args:
             data_inicio: Data inicial (YYYY-MM-DD)
             data_fim: Data final (YYYY-MM-DD)
+            estabelecimentos: Lista de códigos de estabelecimento (opcional)
+            status: Status dos recebíveis ('projetado' ou 'recebido')
 
         Returns:
             Lista de dicionários [{data: str, total: float}]
         """
-        query = """
-        SELECT
-            CONVERT(VARCHAR(10), data_recebimento, 23) as data,
-            CAST(SUM(valor) AS DECIMAL(18,2)) as total
-        FROM recebiveis_cartao
-        WHERE data_recebimento BETWEEN %s AND %s
-        GROUP BY CONVERT(VARCHAR(10), data_recebimento, 23)
-        ORDER BY CONVERT(VARCHAR(10), data_recebimento, 23)
-        """
+        if estabelecimentos and len(estabelecimentos) > 0:
+            # Filtra por estabelecimentos específicos
+            placeholders = ','.join(['%s'] * len(estabelecimentos))
+            query = f"""
+            SELECT
+                CONVERT(VARCHAR(10), data_recebimento, 23) as data,
+                CAST(SUM(valor) AS DECIMAL(18,2)) as total
+            FROM recebiveis_cartao
+            WHERE data_recebimento BETWEEN %s AND %s
+              AND estabelecimento IN ({placeholders})
+              AND status = %s
+            GROUP BY CONVERT(VARCHAR(10), data_recebimento, 23)
+            ORDER BY CONVERT(VARCHAR(10), data_recebimento, 23)
+            """
+            params = (data_inicio, data_fim) + tuple(estabelecimentos) + (status,)
+        else:
+            # Retorna todos os estabelecimentos
+            query = """
+            SELECT
+                CONVERT(VARCHAR(10), data_recebimento, 23) as data,
+                CAST(SUM(valor) AS DECIMAL(18,2)) as total
+            FROM recebiveis_cartao
+            WHERE data_recebimento BETWEEN %s AND %s
+              AND status = %s
+            GROUP BY CONVERT(VARCHAR(10), data_recebimento, 23)
+            ORDER BY CONVERT(VARCHAR(10), data_recebimento, 23)
+            """
+            params = (data_inicio, data_fim, status)
 
-        results = db.execute_query(query, (data_inicio, data_fim))
+        results = db.execute_query(query, params)
         return results if results else []
 
     @staticmethod

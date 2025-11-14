@@ -11,9 +11,9 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Eye, EyeOff, Loader2, MessageSquare, ShieldCheck, Users, Zap, BarChart3 } from 'lucide-react'
+import { Eye, EyeOff, Loader2, MessageSquare, ShieldCheck, Users, Zap, BarChart3, ArrowLeft } from 'lucide-react'
 import { useAuth } from '@/context/auth-context'
-import { showCustomToastSuccess, showCustomToastError } from '@/lib/toast'
+import { showCustomToastError } from '@/lib/toast'
 
 const highlights = [
   'Centralize conversas em um só lugar',
@@ -31,9 +31,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [remember, setRemember] = useState(true)
-  const [loginStep, setLoginStep] = useState<'idle' | 'authenticating'>('idle')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
   const navigate = useNavigate()
-  const { login, token } = useAuth()
+  const { login, verify2FA, token, requires2FA, pendingEmail } = useAuth()
 
   useEffect(() => {
     if (token) {
@@ -43,32 +45,35 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const formData = new FormData(e.target as HTMLFormElement)
-    const email = String(formData.get('email') || '')
-    const password = String(formData.get('password') || '')
-
     setIsLoading(true)
-    setLoginStep('authenticating')
 
     try {
       await login({ email, password, remember })
-      await new Promise(resolve => setTimeout(resolve, 300))
-      navigate('/projetado', { replace: true })
-      setTimeout(() => {
-        showCustomToastSuccess(
-          'Login realizado com sucesso!',
-          'Bem-vindo de volta à plataforma.'
-        )
-      }, 100)
+      // Se não requer 2FA, o login() vai redirecionar automaticamente
     } catch (error: any) {
-      showCustomToastError(
-        'Erro ao fazer login',
-        error.message || 'Verifique suas credenciais e tente novamente.'
-      )
-      setLoginStep('idle')
+      // Erro já tratado no AuthContext
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleVerify2FA = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      await verify2FA({ email: pendingEmail || email, code, remember })
+      // verify2FA vai redirecionar automaticamente
+    } catch (error: any) {
+      // Erro já tratado no AuthContext
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleBackToLogin = () => {
+    setCode('')
+    setIsLoading(false)
   }
 
   return (
@@ -102,10 +107,10 @@ export default function LoginPage() {
                     />
                   </svg>
                 </span>
-                Template App
+                Financeiro Servis
               </div>
               <span className="rounded-full bg-sidebar-primary/20 px-3 py-1 text-xs font-medium text-sidebar-primary">
-                CRM & Atendimento
+                Gestão Financeira
               </span>
             </div>
 
@@ -122,10 +127,10 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight text-sidebar-foreground">
-                  Converse com seus clientes no ritmo que eles esperam.
+                  Gestão Financeira Inteligente e Segura
                 </h1>
                 <p className="mt-4 max-w-sm text-sm text-sidebar-foreground/80">
-                  Automação inteligente, campanhas mensuráveis e integrações em tempo real para transformar o atendimento em relacionamento.
+                  Controle completo de contas a pagar e receber, com projeções e análises em tempo real.
                 </p>
               </div>
 
@@ -186,77 +191,120 @@ export default function LoginPage() {
                   </svg>
                 </div>
                 <span className="text-lg tracking-tight text-foreground">
-                  Template<span className="font-bold">App</span>
+                  Financeiro<span className="font-bold">Servis</span>
                 </span>
               </div>
               <div>
-                <CardTitle className="text-2xl font-semibold">Bem-vindo de volta</CardTitle>
+                <CardTitle className="text-2xl font-semibold">
+                  {requires2FA ? 'Verificação de Segurança' : 'Bem-vindo de volta'}
+                </CardTitle>
                 <CardDescription>
-                  Acesse sua conta para acompanhar conversas, campanhas e relatórios em tempo real.
+                  {requires2FA
+                    ? 'Digite o código de 6 dígitos enviado para seu WhatsApp'
+                    : 'Acesse sua conta para gerenciar o financeiro'}
                 </CardDescription>
               </div>
             </CardHeader>
-          <CardContent className="space-y-5">
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="nome@empresa.com"
-                    className="h-11"
-                    defaultValue="admin@teste.com"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Senha</Label>
+            <CardContent className="space-y-5">
+              {!requires2FA ? (
+                <form onSubmit={handleLogin} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="nome@empresa.com"
+                      className="h-11"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
                   </div>
-                  <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    className="h-11 pr-12"
-                    defaultValue="12345678"
-                    required
-                  />
+                  <div className="space-y-2">
+                    <div className="flex items-center">
+                      <Label htmlFor="password">Senha</Label>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        className="h-11 pr-12"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="remember-me"
+                        checked={remember}
+                        onCheckedChange={(checked) => setRemember(Boolean(checked))}
+                      />
+                      <Label htmlFor="remember-me" className="text-sm font-normal">
+                        Permanecer conectado
+                      </Label>
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full h-11" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isLoading ? 'Autenticando...' : 'Entrar'}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleVerify2FA} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="code">Código de Verificação</Label>
+                    <Input
+                      id="code"
+                      name="code"
+                      type="text"
+                      placeholder="000000"
+                      className="h-11 text-center text-2xl tracking-widest"
+                      maxLength={6}
+                      value={code}
+                      onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                      required
+                      autoFocus
+                    />
+                    <p className="text-xs text-muted-foreground text-center">
+                      Digite o código enviado para {pendingEmail || email}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Button type="submit" className="w-full h-11" disabled={isLoading || code.length !== 6}>
+                      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {isLoading ? 'Verificando...' : 'Verificar Código'}
+                    </Button>
+
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
-                      onClick={() => setShowPassword((prev) => !prev)}
+                      variant="outline"
+                      className="w-full h-11"
+                      onClick={handleBackToLogin}
+                      disabled={isLoading}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Voltar para Login
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Use: admin@teste.com / 12345678
-                  </p>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="remember-me"
-                      checked={remember}
-                      onCheckedChange={(checked) => setRemember(Boolean(checked))}
-                    />
-                    <Label htmlFor="remember-me" className="text-sm font-normal">
-                      Permanecer conectado
-                    </Label>
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full h-11" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {loginStep === 'authenticating' && 'Autenticando...'}
-                  {loginStep === 'idle' && 'Entrar'}
-                </Button>
-              </form>
+                </form>
+              )}
             </CardContent>
           </Card>
         </div>

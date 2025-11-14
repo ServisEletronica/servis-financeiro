@@ -5,6 +5,7 @@ Rotas para gerenciamento de recebíveis de cartão
 from fastapi import APIRouter, File, UploadFile, HTTPException, Query
 from fastapi.responses import JSONResponse
 from typing import List, Optional
+from pydantic import BaseModel
 from services.recebiveis_cartao_service import RecebiveisCartaoService
 import logging
 
@@ -12,18 +13,33 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/recebiveis-cartao", tags=["Recebíveis Cartão"])
 
 
+class RecebidoManualRequest(BaseModel):
+    data_recebimento: str
+    valor: float
+    estabelecimento: str
+    mes_referencia: str
+
+
 @router.post("/upload")
-async def upload_calendarios(files: List[UploadFile] = File(...)):
+async def upload_calendarios(
+    files: List[UploadFile] = File(...),
+    status: str = Query('projetado', description="Status: projetado ou recebido")
+):
     """
     Faz upload e processa calendários Cielo
 
     Args:
         files: Lista de arquivos de imagem dos calendários
+        status: Status dos recebíveis (projetado ou recebido)
 
     Returns:
         Resumo do processamento
     """
     try:
+        # Valida status
+        if status not in ['projetado', 'recebido']:
+            raise HTTPException(status_code=400, detail="Status deve ser 'projetado' ou 'recebido'")
+
         # Validações
         if not files:
             raise HTTPException(status_code=400, detail="Nenhum arquivo foi enviado")
@@ -55,7 +71,7 @@ async def upload_calendarios(files: List[UploadFile] = File(...)):
             images_bytes.append(content)
 
         # Processar upload
-        resultado = RecebiveisCartaoService.processar_upload(images_bytes)
+        resultado = RecebiveisCartaoService.processar_upload(images_bytes, status=status)
 
         if not resultado["sucesso"]:
             return JSONResponse(
@@ -81,7 +97,9 @@ async def upload_calendarios(files: List[UploadFile] = File(...)):
 @router.get("")
 async def obter_recebiveis(
     data_inicio: str = Query(..., description="Data inicial (YYYY-MM-DD)"),
-    data_fim: str = Query(..., description="Data final (YYYY-MM-DD)")
+    data_fim: str = Query(..., description="Data final (YYYY-MM-DD)"),
+    estabelecimentos: Optional[str] = Query(None, description="Códigos de estabelecimento separados por vírgula"),
+    status: str = Query('projetado', description="Status: projetado ou recebido")
 ):
     """
     Obtém recebíveis agrupados por data em um período
@@ -89,14 +107,32 @@ async def obter_recebiveis(
     Args:
         data_inicio: Data inicial no formato YYYY-MM-DD
         data_fim: Data final no formato YYYY-MM-DD
+        estabelecimentos: Códigos de estabelecimento separados por vírgula (opcional)
+        status: Status dos recebíveis (projetado ou recebido)
 
     Returns:
         Lista de recebíveis por data
     """
     try:
-        recebiveis = RecebiveisCartaoService.obter_recebiveis_por_periodo(data_inicio, data_fim)
+        # Valida status
+        if status not in ['projetado', 'recebido']:
+            raise HTTPException(status_code=400, detail="Status deve ser 'projetado' ou 'recebido'")
+
+        # Converte string de estabelecimentos em lista
+        lista_estabelecimentos = None
+        if estabelecimentos:
+            lista_estabelecimentos = [e.strip() for e in estabelecimentos.split(',') if e.strip()]
+
+        recebiveis = RecebiveisCartaoService.obter_recebiveis_por_periodo(
+            data_inicio,
+            data_fim,
+            lista_estabelecimentos,
+            status
+        )
         return recebiveis
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Erro em obter_recebiveis: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -172,4 +208,40 @@ async def limpar_dados_mes(
 
     except Exception as e:
         logger.error(f"Erro em limpar_dados_mes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/manual")
+async def inserir_recebido_manual(data: RecebidoManualRequest):
+    """
+    Insere ou atualiza um recebível de cartão manualmente com status 'recebido'
+
+    Args:
+        data: Dados do recebível (data_recebimento, valor, estabelecimento, mes_referencia)
+
+    Returns:
+        Confirmação da inserção/atualização
+    """
+    try:
+        RecebiveisCartaoService.upsert_recebivel(
+            data_recebimento=data.data_recebimento,
+            valor=data.valor,
+            estabelecimento=data.estabelecimento,
+            mes_referencia=data.mes_referencia,
+            status='recebido',
+            usuario_upload='manual'
+        )
+
+        return {
+            "message": "Recebível registrado com sucesso",
+            "data": {
+                "data_recebimento": data.data_recebimento,
+                "valor": data.valor,
+                "estabelecimento": data.estabelecimento,
+                "status": "recebido"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Erro em inserir_recebido_manual: {e}")
         raise HTTPException(status_code=500, detail=str(e))
