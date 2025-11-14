@@ -4,8 +4,6 @@ services:
   # Frontend Service
   frontend:
     image: ghcr.io/serviseletronica/servis-financeiro-frontend:latest
-    container_name: financeiro-frontend
-    restart: unless-stopped
     ports:
       - "6009:6009"
     environment:
@@ -13,7 +11,9 @@ services:
       - VITE_API_URL=${VITE_API_URL}
     networks:
       - ocorrencias-net
-    labels:
+    deploy:
+      replicas: 1
+      labels:
       - "traefik.enable=true"
 
       # HTTPS Frontend (todas as rotas exceto /api/*)
@@ -32,12 +32,12 @@ services:
 
       # Rede correta
       - "traefik.docker.network=ocorrenciasapp_ocorrencias-net"
-
+    depends_on:
+      - backend
+      
   # Backend Service
   backend:
     image: ghcr.io/serviseletronica/servis-financeiro-api:latest
-    container_name: financeiro-backend
-    restart: unless-stopped
     ports:
       - "3006:3006"
     environment:
@@ -61,7 +61,14 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     networks:
       - ocorrencias-net
-    labels:
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      labels:
       - "traefik.enable=true"
 
       # HTTPS API (apenas rotas /api/*)
