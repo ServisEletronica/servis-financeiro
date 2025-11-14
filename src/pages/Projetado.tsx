@@ -1402,6 +1402,13 @@ export default function ProjetadoPage() {
                       </TableCell>
                     </TableRow>
 
+                    {/* Linha TOTAL RECEBIDO */}
+                    <TableRow className="bg-muted/30">
+                      <TableCell className="font-bold px-6 w-[280px] h-[53px]">
+                        <span className="whitespace-nowrap">TOTAL RECEBIDO</span>
+                      </TableCell>
+                    </TableRow>
+
                     {/* Linha PAGO */}
                     <TableRow>
                       <TableCell className="font-medium px-6 w-[280px] h-[53px]">
@@ -1409,6 +1416,13 @@ export default function ProjetadoPage() {
                           <div className="h-3 w-3 rounded-full" style={{ backgroundColor: 'hsl(var(--chart-5))' }}></div>
                           <span className="whitespace-nowrap">PAGO</span>
                         </div>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Linha TOTAL GERAL */}
+                    <TableRow className="bg-muted/50">
+                      <TableCell className="font-bold px-6 w-[280px] h-[53px]">
+                        <span className="whitespace-nowrap">TOTAL GERAL</span>
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -1566,6 +1580,64 @@ export default function ProjetadoPage() {
                       })()}
                     </TableRow>
 
+                    {/* Linha TOTAL RECEBIDO */}
+                    <TableRow className="bg-muted/30">
+                      {(() => {
+                        let diasUteis = dadosGrafico.filter((item) => {
+                          const date = new Date(item.data_completa + 'T00:00:00')
+                          const dayOfWeek = date.getDay()
+                          const mesAnoData = item.data_completa.substring(0, 7)
+                          return (dayOfWeek >= 1 && dayOfWeek <= 5) && (mesAnoData === selectedPeriod)
+                        })
+
+                        // Filtra por dia se um dia específico for selecionado
+                        if (selectedDay !== 'todos') {
+                          diasUteis = diasUteis.filter(item => item.data_completa === selectedDay)
+                        }
+
+                        // Mapas
+                        const recebidasMap = new Map<string, number>()
+                        contasReceberLiquidadas.forEach(conta => {
+                          recebidasMap.set(conta.data, conta.total)
+                        })
+
+                        const recebidosMap = new Map<string, number>()
+                        recebidosCartao.forEach(rec => {
+                          recebidosMap.set(rec.data, rec.total)
+                        })
+
+                        const totalRecebidoGeral = diasUteis.reduce((acc, item) => {
+                          const recebido = recebidasMap.get(item.data_completa) || 0
+                          const cartoes = recebidosMap.get(item.data_completa) || 0
+                          return acc + recebido + cartoes
+                        }, 0)
+
+                        return (
+                          <>
+                            {diasUteis.map((item) => {
+                              const recebido = recebidasMap.get(item.data_completa) || 0
+                              const cartoes = recebidosMap.get(item.data_completa) || 0
+                              const total = recebido + cartoes
+                              return (
+                                <TableCell key={item.mes} className="text-center w-[140px] px-4 h-[53px] bg-muted/30">
+                                  <span className="font-bold whitespace-nowrap text-green-600 dark:text-green-400">
+                                    {formatCurrency(total)}
+                                  </span>
+                                </TableCell>
+                              )
+                            })}
+                            {selectedDay === 'todos' && (
+                              <TableCell className="text-center w-[140px] px-4 bg-muted/50 border-l-2 h-[53px]">
+                                <span className="font-bold whitespace-nowrap text-green-600 dark:text-green-400">
+                                  {formatCurrency(totalRecebidoGeral)}
+                                </span>
+                              </TableCell>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </TableRow>
+
                     {/* Linha PAGO */}
                     <TableRow>
                       {(() => {
@@ -1608,6 +1680,72 @@ export default function ProjetadoPage() {
                               <TableCell className="text-center w-[140px] px-4 bg-muted/50 border-l-2 h-[53px]">
                                 <span className="font-bold whitespace-nowrap" style={{ color: 'hsl(var(--chart-5))' }}>
                                   {formatCurrency(totalPago)}
+                                </span>
+                              </TableCell>
+                            )}
+                          </>
+                        )
+                      })()}
+                    </TableRow>
+
+                    {/* Linha TOTAL GERAL */}
+                    <TableRow className="bg-muted/50">
+                      {(() => {
+                        let diasUteis = dadosGrafico.filter((item) => {
+                          const date = new Date(item.data_completa + 'T00:00:00')
+                          const dayOfWeek = date.getDay()
+                          const mesAnoData = item.data_completa.substring(0, 7)
+                          return (dayOfWeek >= 1 && dayOfWeek <= 5) && (mesAnoData === selectedPeriod)
+                        })
+
+                        // Filtra por dia se um dia específico for selecionado
+                        if (selectedDay !== 'todos') {
+                          diasUteis = diasUteis.filter(item => item.data_completa === selectedDay)
+                        }
+
+                        // Mapas
+                        const recebidasMap = new Map<string, number>()
+                        contasReceberLiquidadas.forEach(conta => {
+                          recebidasMap.set(conta.data, conta.total)
+                        })
+
+                        const recebidosMap = new Map<string, number>()
+                        recebidosCartao.forEach(rec => {
+                          recebidosMap.set(rec.data, rec.total)
+                        })
+
+                        const pagasMap = new Map<string, number>()
+                        contasPagarLiquidadas.forEach(conta => {
+                          pagasMap.set(conta.data, conta.total)
+                        })
+
+                        const totalGeralCompleto = diasUteis.reduce((acc, item) => {
+                          const recebido = recebidasMap.get(item.data_completa) || 0
+                          const cartoes = recebidosMap.get(item.data_completa) || 0
+                          const pago = pagasMap.get(item.data_completa) || 0
+                          return acc + (recebido + cartoes - pago)
+                        }, 0)
+
+                        return (
+                          <>
+                            {diasUteis.map((item) => {
+                              const recebido = recebidasMap.get(item.data_completa) || 0
+                              const cartoes = recebidosMap.get(item.data_completa) || 0
+                              const pago = pagasMap.get(item.data_completa) || 0
+                              const total = recebido + cartoes - pago
+                              const isNegative = total < 0
+                              return (
+                                <TableCell key={item.mes} className="text-center w-[140px] px-4 h-[53px] bg-muted/50">
+                                  <span className={`font-bold whitespace-nowrap ${isNegative ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                                    {formatCurrency(total)}
+                                  </span>
+                                </TableCell>
+                              )
+                            })}
+                            {selectedDay === 'todos' && (
+                              <TableCell className="text-center w-[140px] px-4 bg-muted/50 border-l-2 h-[53px]">
+                                <span className={`font-bold whitespace-nowrap ${totalGeralCompleto < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                                  {formatCurrency(totalGeralCompleto)}
                                 </span>
                               </TableCell>
                             )}
