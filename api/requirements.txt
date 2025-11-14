@@ -8,7 +8,7 @@ python-multipart==0.0.6
 pytz==2024.1
 openai>=1.0.0
 pillow>=10.0.0
-bcrypt==4.1.2
+bcrypt==4.0.1
 pyjwt==2.8.0
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
