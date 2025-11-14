@@ -24,8 +24,17 @@ class Settings(BaseSettings):
     API_RELOAD: bool = True
 
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000", "http://localhost:8080", "http://10.50.3.3:8080",
-                                "http://localhost:8081", "http://10.50.3.3:8081", "http://10.212.135.208:8000"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://10.50.3.3:8080",
+        "http://localhost:8081",
+        "http://10.50.3.3:8081",
+        "http://10.212.135.208:8000",
+        "https://financeiro.serviseletronica.com.br",
+        "https://financeiro.serviseletronica.com.br:58769"
+    ]
 
     # Timezone
     TIMEZONE: str = "America/Fortaleza"
