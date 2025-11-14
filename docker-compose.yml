@@ -17,15 +17,17 @@ services:
       - "traefik.enable=true"
 
       # HTTPS Frontend (todas as rotas exceto /api/*)
-      - "traefik.http.routers.financeiro-frontend-https.rule=Host(`financeiro.serviseletronica.com.br`) && !PathPrefix(`/api/`)"
+      - "traefik.http.routers.financeiro-frontend-https.rule=!PathPrefix(`/api/`)"
       - "traefik.http.routers.financeiro-frontend-https.entrypoints=websecure"
       - "traefik.http.routers.financeiro-frontend-https.tls.certresolver=cloudflareResolver"
       - "traefik.http.routers.financeiro-frontend-https.service=financeiro-frontend"
+      - "traefik.http.routers.financeiro-frontend-https.priority=50"
 
       # HTTP Frontend → redirecionamento para HTTPS
-      - "traefik.http.routers.financeiro-frontend-http.rule=Host(`financeiro.serviseletronica.com.br`) && !PathPrefix(`/api/`)"
+      - "traefik.http.routers.financeiro-frontend-http.rule=!PathPrefix(`/api/`)"
       - "traefik.http.routers.financeiro-frontend-http.entrypoints=web"
       - "traefik.http.routers.financeiro-frontend-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.financeiro-frontend-http.priority=50"
 
       # Serviço
       - "traefik.http.services.financeiro-frontend.loadbalancer.server.port=6009"
@@ -72,16 +74,18 @@ services:
       - "traefik.enable=true"
 
       # HTTPS API (apenas rotas /api/*)
-      - "traefik.http.routers.financeiro-api-secure.rule=Host(`financeiro.serviseletronica.com.br`) && PathPrefix(`/api/`)"
+      - "traefik.http.routers.financeiro-api-secure.rule=PathPrefix(`/api/`)"
       - "traefik.http.routers.financeiro-api-secure.entrypoints=websecure"
       - "traefik.http.routers.financeiro-api-secure.service=financeiro-api-svc"
       - "traefik.http.routers.financeiro-api-secure.tls=true"
       - "traefik.http.routers.financeiro-api-secure.tls.certresolver=cloudflareResolver"
+      - "traefik.http.routers.financeiro-api-secure.priority=100"
 
       # HTTP API → redirecionamento para HTTPS
-      - "traefik.http.routers.financeiro-api.rule=Host(`financeiro.serviseletronica.com.br`) && PathPrefix(`/api/`)"
+      - "traefik.http.routers.financeiro-api.rule=PathPrefix(`/api/`)"
       - "traefik.http.routers.financeiro-api.entrypoints=web"
       - "traefik.http.routers.financeiro-api.middlewares=redirect-to-https"
+      - "traefik.http.routers.financeiro-api.priority=100"
 
       # Serviço
       - "traefik.http.services.financeiro-api-svc.loadbalancer.server.port=3006"
