@@ -41,7 +41,8 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           push: true
-          no-cache: true
+          cache-from: type=registry,ref=ghcr.io/${{ steps.prep.outputs.owner }}/${{ matrix.name }}:latest
+          cache-to: type=inline
           build-args: |
             ${{ matrix.is_frontend && format('VITE_API_URL={0}', secrets.VITE_API_URL || 'http://localhost:3006') || '' }}
           tags: |
