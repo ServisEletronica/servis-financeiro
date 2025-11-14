@@ -8,6 +8,7 @@ services:
       - "6009:6009"
     environment:
       - NODE_ENV=production
+      - VITE_API_URL=${VITE_API_URL}
     networks:
       - ocorrencias-net
     deploy:
@@ -48,12 +49,21 @@ services:
     environment:
       - PORT=3006
       - NODE_ENV=production
+      # Banco Local (Financeiro)
       - DB_SERVER=${DB_SERVER}
       - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - SECRET_KEY=${SECRET_KEY}
+      # Banco Senior (Sapiens)
+      - SENIOR_DB_SERVER=${SENIOR_DB_SERVER}
+      - SENIOR_DB_PORT=${SENIOR_DB_PORT}
+      - SENIOR_DB_NAME=${SENIOR_DB_NAME}
+      - SENIOR_DB_USER=${SENIOR_DB_USER}
+      - SENIOR_DB_PASSWORD=${SENIOR_DB_PASSWORD}
+      # Autenticação
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      # OpenAI
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
