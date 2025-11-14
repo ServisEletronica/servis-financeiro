@@ -1,14 +1,53 @@
 version: '3.8'
 
 services:
-  api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    container_name: servis-financeiro-api
+  # Frontend Service
+  frontend:
+    image: ghcr.io/serviseletronica/servis-financeiro-frontend:latest
+    ports:
+      - "6009:6009"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - ocorrencias-net
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+
+        # HTTPS Frontend (todas as rotas exceto /api/*)
+        - "traefik.http.routers.financeiro-frontend-https.rule=Host(`financeiro.serviseletronica.com.br`) && !PathPrefix(`/api/`)"
+        - "traefik.http.routers.financeiro-frontend-https.entrypoints=websecure"
+        - "traefik.http.routers.financeiro-frontend-https.tls.certresolver=cloudflareResolver"
+        - "traefik.http.routers.financeiro-frontend-https.service=financeiro-frontend"
+
+        # HTTP Frontend → redirecionamento para HTTPS
+        - "traefik.http.routers.financeiro-frontend-http.rule=Host(`financeiro.serviseletronica.com.br`) && !PathPrefix(`/api/`)"
+        - "traefik.http.routers.financeiro-frontend-http.entrypoints=web"
+        - "traefik.http.routers.financeiro-frontend-http.middlewares=redirect-to-https"
+
+        # Serviço
+        - "traefik.http.services.financeiro-frontend.loadbalancer.server.port=6009"
+
+        # Rede correta
+        - "traefik.docker.network=ocorrenciasapp_ocorrencias-net"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:6009/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - backend
+
+  # Backend Service
+  backend:
+    image: ghcr.io/serviseletronica/servis-financeiro-api:latest
     ports:
       - "3006:3006"
     environment:
+      - PORT=3006
+      - NODE_ENV=production
       - DB_SERVER=${DB_SERVER}
       - DB_PORT=${DB_PORT}
       - DB_USER=${DB_USER}
@@ -16,27 +55,41 @@ services:
       - DB_NAME=${DB_NAME}
       - SECRET_KEY=${SECRET_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-    env_file:
-      - .env
-    restart: unless-stopped
-    networks:
-      - servis-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      labels:
+        - "traefik.enable=true"
 
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - VITE_API_URL=http://localhost:3006
-    container_name: servis-financeiro-frontend
-    ports:
-      - "6009:6009"
-    depends_on:
-      - api
-    restart: unless-stopped
+        # HTTPS API (apenas rotas /api/*)
+        - "traefik.http.routers.financeiro-api-secure.rule=Host(`financeiro.serviseletronica.com.br`) && PathPrefix(`/api/`)"
+        - "traefik.http.routers.financeiro-api-secure.entrypoints=websecure"
+        - "traefik.http.routers.financeiro-api-secure.service=financeiro-api-svc"
+        - "traefik.http.routers.financeiro-api-secure.tls=true"
+        - "traefik.http.routers.financeiro-api-secure.tls.certresolver=cloudflareResolver"
+
+        # HTTP API → redirecionamento para HTTPS
+        - "traefik.http.routers.financeiro-api.rule=Host(`financeiro.serviseletronica.com.br`) && PathPrefix(`/api/`)"
+        - "traefik.http.routers.financeiro-api.entrypoints=web"
+        - "traefik.http.routers.financeiro-api.middlewares=redirect-to-https"
+
+        # Serviço
+        - "traefik.http.services.financeiro-api-svc.loadbalancer.server.port=3006"
+
     networks:
-      - servis-network
+      - ocorrencias-net
 
 networks:
-  servis-network:
-    driver: bridge
+  ocorrencias-net:
+    external: true
+    name: ocorrenciasapp_ocorrencias-net
