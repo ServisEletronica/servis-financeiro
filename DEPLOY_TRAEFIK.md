@@ -42,10 +42,13 @@ docker pull ghcr.io/serviseletronica/servis-financeiro-frontend:latest
 ### 3. Deploy
 
 ```bash
-# Iniciar os serviços
-docker stack deploy -c docker-compose.yml financeiro
+# Remover stack antigo se existir
+docker stack rm financeiro 2>/dev/null || true
 
-# Ou com docker compose (modo standalone)
+# Iniciar os serviços com docker-compose
+docker-compose up -d
+
+# Ou usando docker compose v2
 docker compose up -d
 ```
 
@@ -70,15 +73,15 @@ Ambos os serviços estão configurados para redirecionar automaticamente HTTP pa
 
 ```bash
 # Ver logs
-docker service logs financeiro_frontend
-docker service logs financeiro_backend
+docker-compose logs -f frontend
+docker-compose logs -f backend
 
-# Ver serviços rodando
-docker service ls
+# Ver containers rodando
+docker-compose ps
 
-# Ver tasks dos serviços
-docker service ps financeiro_frontend
-docker service ps financeiro_backend
+# Ver logs em tempo real
+docker logs -f financeiro-frontend
+docker logs -f financeiro-backend
 ```
 
 ## 🔍 Healthchecks
@@ -97,12 +100,15 @@ curl http://localhost:3006/health
 
 ```bash
 # Pull das novas imagens
+docker-compose pull
+
+# Recriar containers com as novas imagens
+docker-compose up -d --force-recreate
+
+# Ou manualmente
 docker pull ghcr.io/serviseletronica/servis-financeiro-api:latest
 docker pull ghcr.io/serviseletronica/servis-financeiro-frontend:latest
-
-# Atualizar serviços
-docker service update --image ghcr.io/serviseletronica/servis-financeiro-api:latest financeiro_backend
-docker service update --image ghcr.io/serviseletronica/servis-financeiro-frontend:latest financeiro_frontend
+docker-compose up -d
 ```
 
 ## 🐛 Troubleshooting
@@ -111,8 +117,8 @@ docker service update --image ghcr.io/serviseletronica/servis-financeiro-fronten
 
 ```bash
 # Ver labels do container
-docker service inspect financeiro_frontend --pretty
-docker service inspect financeiro_backend --pretty
+docker inspect financeiro-frontend
+docker inspect financeiro-backend
 ```
 
 ### Verificar network
@@ -128,14 +134,17 @@ docker network inspect ocorrenciasapp_ocorrencias-net
 ### Logs do Traefik
 
 ```bash
-docker service logs traefik
+docker logs -f traefik
 ```
 
 ### Reiniciar serviços
 
 ```bash
-docker service update --force financeiro_frontend
-docker service update --force financeiro_backend
+docker-compose restart frontend
+docker-compose restart backend
+
+# Ou reiniciar tudo
+docker-compose restart
 ```
 
 ## 📝 Estrutura de Portas
